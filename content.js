@@ -8,9 +8,9 @@ function extractCode() {
     return Array.from(codeLines).map(line => line.innerText).join('\n');
 }
 
-// Function to create a floating "Explain Code" button
+// Function to create a floating button
 function createExplainButton() {
-    if (document.getElementById("explain-button")) return; // Prevent duplicates
+    if (document.getElementById("explain-button")) return;
 
     let button = document.createElement("button");
     button.id = "explain-button";
@@ -30,90 +30,41 @@ function createExplainButton() {
     button.onclick = () => {
         createSidebar();
         let extractedCode = extractCode();
-        document.getElementById("explanation-content").innerText = "⏳ Fetching explanation...";
+        document.getElementById("explanation-content").innerHTML = "<p>⏳ Fetching explanation...</p>";
         chrome.runtime.sendMessage({ action: "explainCode", code: extractedCode });
     };
 
     document.body.appendChild(button);
 }
 
-// Function to create a collapsible sidebar
+// Function to create the sidebar
 function createSidebar() {
-    let existingSidebar = document.getElementById("code-explainer-sidebar");
-    if (existingSidebar) return; // Prevent duplicates
+    if (document.getElementById("code-explainer-sidebar")) return;
 
     let sidebar = document.createElement("div");
     sidebar.id = "code-explainer-sidebar";
-    sidebar.style.position = "fixed";
-    sidebar.style.top = "50px";
-    sidebar.style.right = "0";
-    sidebar.style.width = "400px";
-    sidebar.style.height = "80vh";
-    sidebar.style.backgroundColor = "#f8f9fa";
-    sidebar.style.borderLeft = "2px solid #ccc";
-    sidebar.style.boxShadow = "-2px 0 10px rgba(0,0,0,0.1)";
-    sidebar.style.overflowY = "auto";
-    sidebar.style.padding = "15px";
-    sidebar.style.zIndex = "10000";
-    sidebar.style.fontFamily = "Arial, sans-serif";
-    sidebar.style.display = "flex";
-    sidebar.style.flexDirection = "column";
-    sidebar.style.transition = "transform 0.3s ease-in-out";
+    sidebar.style = "position: fixed; top: 50px; right: 0; width: 400px; height: 80vh; background-color: #f8f9fa; border-left: 2px solid #ccc; box-shadow: -2px 0 10px rgba(0,0,0,0.1); padding: 15px; z-index: 10000; font-family: Arial, sans-serif; display: flex; flex-direction: column;";
 
-    let isCollapsed = false;
-
-    // Collapse Button
-    let collapseButton = document.createElement("button");
-    collapseButton.innerText = "◀";
-    collapseButton.style.position = "absolute";
-    collapseButton.style.left = "-30px";
-    collapseButton.style.top = "10px";
-    collapseButton.style.border = "none";
-    collapseButton.style.background = "#007bff";
-    collapseButton.style.color = "white";
-    collapseButton.style.padding = "5px";
-    collapseButton.style.cursor = "pointer";
-
-    collapseButton.onclick = () => {
-        isCollapsed = !isCollapsed;
-        sidebar.style.transform = isCollapsed ? "translateX(100%)" : "translateX(0)";
-        collapseButton.innerText = isCollapsed ? "▶" : "◀";
-    };
-
-    // Title
     let title = document.createElement("h3");
     title.innerText = "Code Explanation";
-    title.style.marginTop = "0";
     title.style.color = "#333";
 
-    // Explanation Content
     let explanationContainer = document.createElement("div");
     explanationContainer.id = "explanation-content";
     explanationContainer.style.whiteSpace = "pre-wrap";
-    explanationContainer.innerText = "Click 'Explain Code' to generate explanation.";
+    explanationContainer.innerHTML = "Click 'Explain Code' to generate explanation.";
 
-    sidebar.appendChild(collapseButton);
     sidebar.appendChild(title);
     sidebar.appendChild(explanationContainer);
     document.body.appendChild(sidebar);
 }
 
-// Listen for explanation from background.js
+// Listen for API response
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "displayExplanation") {
         let explanationContainer = document.getElementById("explanation-content");
         if (explanationContainer) {
-            explanationContainer.innerText = request.explanation || "⚠ No explanation available.";
-        }
-    }
-});
-
-// Listen for `toggle` action (from background.js)
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "toggle") {
-        let button = document.getElementById("explain-button");
-        if (button) {
-            button.style.display = button.style.display === "none" ? "block" : "none";
+            explanationContainer.innerHTML = request.explanation ? `<p>${request.explanation}</p>` : "<p style='color:red;'>⚠ No explanation available.</p>";
         }
     }
 });
