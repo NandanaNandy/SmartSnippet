@@ -1,14 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Real Time Code Explainer</title>
-  <link rel="stylesheet" type="text/css" href="popup.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Explainer</title>
 </head>
 <body>
-  <h1>Code Explainer</h1>
-  <textarea id="codeInput" placeholder="Paste your code here..."></textarea>
-  <button id="explainButton">Explain Code</button>
-  <div id="explanation"></div>
-  <script src="popup.js"></script>
+    <div class="container">
+        <textarea placeholder="Paste your code here" rows="10"></textarea>
+        <div>
+            <button id="explainBtn">Explain Code</button>
+            <button id="highlightBtn">Highlight Error</button>
+            <select id="options">
+                <option value="explain">C++</option>
+                <option value="convert">Python</option>
+                <option value="highlight">Java</option>
+            </select>
+        </div>
+        <div id="explanation"></div>
+    </div>
 </body>
 </html>
