@@ -1,41 +1,70 @@
+from flask import Flask, request, jsonify
+import requests
 import os
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List
-import torch
-from transformers import LlamaForCausalLM, LlamaTokenizer
-from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
-app = FastAPI()
+# Load API Key from .env
+load_dotenv()
+API_KEY = os.getenv("API_KEY")
 
-# Enable CORS
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+# Ensure API key is present
+if not API_KEY:
+    raise RuntimeError("API_KEY is missing. Please set it in your .env file.")
 
-# Auto-detect model path
-MODEL_PATH = os.getenv("MODEL_PATH", "/models/llama-3")
-if not os.path.exists(MODEL_PATH):
-    raise RuntimeError(f"Invalid MODEL_PATH: {MODEL_PATH}")
+# Initialize Flask app
+app = Flask(__name__)
 
-# Load Model
-tokenizer = LlamaTokenizer.from_pretrained(MODEL_PATH)
-model = LlamaForCausalLM.from_pretrained(MODEL_PATH)
-model.eval()
+# Groq LLM API URL
+API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-# Request format
-class CodeRequest(BaseModel):
-    files: List[dict]
+# Function to send request to LLM API
+def get_llm_response(user_prompt):
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
 
-@app.post("/analyze")
-def analyze_code(request: CodeRequest):
-    if not request.files:
-        raise HTTPException(status_code=400, detail="No code provided")
+    data = {
+        "model": "llama3-8b-8192",
+        "messages": [{"role": "user", "content": user_prompt}],
+        "temperature": 0.7
+    }
 
-    results = []
-    for file in request.files:
-        inputs = tokenizer(f"Explain the following code:\n{file['content']}", return_tensors="pt")
-        with torch.no_grad():
-            output_tokens = model.generate(**inputs, max_length=500)
-        explanation = tokenizer.decode(output_tokens[0], skip_special_tokens=True)
-        results.append({"filename": file["filename"], "analysis": explanation})
+    response = requests.post(API_URL, json=data, headers=headers)
+    
+    # Error handling
+    if response.status_code != 200:
+        return {"error": response.json()}
+    
+    return response.json()
 
-    return {"results": results}
+# Route to analyze code
+@app.route('/analyze-code', methods=['POST'])
+def analyze_code():
+    data = request.json  
+    user_code = data.get("code", "")
+    language = data.get("language", "unknown")
+
+    if not user_code:
+        return jsonify({"error": "No code provided"}), 400
+
+    # Prompt for AI
+    prompt = f"""
+    You are a code analyzer. Review the following {language} code:
+    - Detect syntax & logic errors
+    - Suggest improvements
+    - Provide an optimized version (if needed)
+    - Identify potential security risks
+    
+    Code:
+    {user_code}
+    """
+
+    # Get AI response
+    ai_response = get_llm_response(prompt)
+
+    return jsonify(ai_response)
+
+# Run Flask Server
+if __name__ == '__main__':
+    app.run(debug=True)
