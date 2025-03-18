@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GitHub to Llama</title>
-  <script src="popup.js"></script>
+  <title>Real Time Code Explainer</title>
+  <link rel="stylesheet" type="text/css" href="popup.css">
 </head>
 <body>
-  <h2>GitHub Code Fetcher</h2>
-  <input type="text" id="repoUrl" placeholder="Enter GitHub Repo URL">
-  <button id="fetchCode">Fetch Code</button>
-  <pre id="output"></pre>
+  <h1>Code Explainer</h1>
+  <textarea id="codeInput" placeholder="Paste your code here..."></textarea>
+  <button id="explainButton">Explain Code</button>
+  <div id="explanation"></div>
+  <script src="popup.js"></script>
 </body>
 </html>

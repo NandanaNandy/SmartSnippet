@@ -1,3 +1,5 @@
-chrome.runtime.onInstalled.addListener(() => {
-    console.log("GitHub to Llama Extension Installed!");
+chrome.browserAction.onClicked.addListener(function(tab) {
+    chrome.tabs.sendMessage(tab.id, { action: "toggle" });
 });
+
+// Add any additional background tasks here
