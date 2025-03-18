@@ -22,3 +22,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true; // Indicates async response
     }
 });
+
+// Browser action (toolbar button) click event
+chrome.action.onClicked.addListener((tab) => {
+    chrome.tabs.sendMessage(tab.id, { action: "toggle" });
+});
+
+// Add any additional background tasks here

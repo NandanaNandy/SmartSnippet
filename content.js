@@ -108,6 +108,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
+// Listen for `toggle` action (from background.js)
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "toggle") {
+        let button = document.getElementById("explain-button");
+        if (button) {
+            button.style.display = button.style.display === "none" ? "block" : "none";
+        }
+    }
+});
+
 // Inject UI elements when viewing a GitHub code file
 if (isGitHubCodeFile()) {
     createExplainButton();
