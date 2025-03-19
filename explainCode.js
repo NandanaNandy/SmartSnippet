@@ -1,5 +1,5 @@
 // Remove dotenv import as it is not supported in the browser environment
-const API_KEY = "Enter Your API Key"; // Use the key directly for browser compatibility
+const API_KEY = "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"; // Use the key directly for browser compatibility
 const API_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
 async function explainCode(code) {
