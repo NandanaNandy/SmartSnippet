@@ -57,4 +57,7 @@ async function convertCode(code, targetLanguage) {
 export default convertCode;
 if (typeof window !== "undefined") {
     window.convertCode = convertCode;
+} else {
+    module.exports = convertCode;
 }
+
