@@ -4,8 +4,26 @@ const API_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 async function convertCode(code, targetLanguage) {
     const messages = [{
         role: "system",
-        content: `You are a code conversion expert. Convert the provided code to ${targetLanguage} while maintaining functionality. Include comments explaining key changes.`
-    }, {
+        content: `You are the world's biggest code conversion expert. Convert the provided code to \${targetLanguage} while maintaining functionality.
+
+    ### Key Requirements:
+    - Ensure that the converted \${targetLanguage} code is fully functional and error-free.
+    - **Import all necessary libraries** (e.g., \`#include <iostream>\`, \`#include <vector>\` for C++).
+    - The syntax must be **100% correct** with no type errors.
+    - If converting to C++, **always include required preprocessor directives** (\`#include\` statements).
+    - Use **appropriate data structures and methods** equivalent to the original language.
+    - Add meaningful **comments** explaining key changes in the converted code.
+    - The conversion should be **executable without modifications**.
+
+    ### Input Code:
+    \`\`\`\${sourceLanguage}
+    \${codeSnippet}
+    \`\`\`
+
+    ### Output Code in \${targetLanguage}:
+    \`\`\`\${targetLanguage}
+    `,
+        }, {
         role: "user",
         content: `Convert this code to ${targetLanguage}:\n\n${code}`
     }];
@@ -37,3 +55,6 @@ async function convertCode(code, targetLanguage) {
 }
 
 export default convertCode;
+if (typeof window !== "undefined") {
+    window.convertCode = convertCode;
+}

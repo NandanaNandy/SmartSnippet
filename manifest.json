@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "GitHub Code Explainer",
+  "name": "SmartSnippet - GitHub Code Fetcher",
   "version": "1.0",
-  "description": "Explains code in GitHub files using AI",
-  "permissions": ["activeTab", "storage", "scripting"],
-  "host_permissions": ["https://github.com/*"],
+  "description": "Explains, converts, and analyzes code in GitHub files using AI. Automatically fetch GitHub file content.",
+  "permissions": ["activeTab", "storage", "scripting", "tabs"],
+  "host_permissions": ["https://github.com/*", "https://raw.githubusercontent.com/*"],
   "background": {
     "service_worker": "background.js"
   },
@@ -17,9 +17,22 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "icon.jpg"
+    "default_icon": {
+      "16": "icons/icon.jpg",
+      "48": "icons/icon.jpg",
+      "128": "icons/icon.jpg"
+    }
   },
+  "options_page": "options.html",
   "icons": {
-    "128": "icon.jpg"
-  }
+    "16": "icons/icon.jpg",
+    "48": "icons/icon.jpg",
+    "128": "icons/icon.jpg"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/icon.jpg"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

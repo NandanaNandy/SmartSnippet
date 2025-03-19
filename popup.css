@@ -1,88 +1,45 @@
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  margin: 0;
-  padding: 15px;
-  background: #f0f2f5;
-  min-width: 400px;
+  width: 400px;
+  height: 500px;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #ffffff;
+  text-align: center;
+  border-radius: 8px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
 }
 
 .popup-container {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  width: 100%;
-  max-width: 600px;
-  padding: 20px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  align-items: center;
 }
 
-.popup-container h1 {
-  font-size: 22px;
-  color: #1a73e8;
-  margin: 0 0 15px 0;
-  text-align: center;
+h2 {
+  color: #333;
 }
 
-.popup-container label {
-  font-weight: 600;
-  color: #202124;
-}
-
-.popup-container select,
-.popup-container input,
-.popup-container textarea {
-  width: 100%;
-  padding: 5px;
-  border: 2px solid #dadce0;
-  border-radius: 6px;
+textarea {
+  width: 90%;
+  height: 120px;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
   font-size: 14px;
-  transition: border-color 0.2s;
+  resize: none;
 }
 
-.popup-container select:focus,
-.popup-container input:focus,
-.popup-container textarea:focus {
-  border-color: #1a73e8;
-  outline: none;
-}
-
-.popup-container textarea {
-  height: 180px;
-  resize: vertical;
-  font-family: 'Consolas', monospace;
-}
-
-.popup-container button {
-  background: #1a73e8;
+button {
+  background-color: #007bff;
   color: white;
-  padding: 12px 20px;
   border: none;
-  border-radius: 6px;
-  font-weight: 600;
+  padding: 10px 20px;
   cursor: pointer;
-  transition: background 0.2s;
+  border-radius: 5px;
+  font-size: 16px;
+  margin-top: 10px;
 }
 
-.popup-container button:hover {
-  background: #1557b0;
-}
-
-#output {
-  margin-top: 15px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #eee;
-  white-space: pre-wrap;
-  font-family: 'Consolas', monospace;
-  font-size: 13px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.error-highlight {
-  color: #dc3545;
-  font-weight: bold;
+button:hover {
+  background-color: #0056b3;
 }
