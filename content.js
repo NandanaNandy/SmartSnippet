@@ -33,6 +33,7 @@ function openCodeExplain() {
 
         const popup = createPopup();
         setupPopupLogic(popup, apiKey);
+        applyGitHubTheme(); // Apply theme after popup creation
     });
 }
 
@@ -41,7 +42,10 @@ function createPopup() {
     popup.id = 'codeExplainPopup';
     popup.innerHTML = `
         <div class="popup-container">
-            <div class="popup-header">Code Assistant 🔍</div>
+            <div class="popup-header">
+                Code Assistant 🔍
+                <button id="closePopup" class="close-button">✖</button>
+            </div>
             <div class="popup-content">
                 <div class="action-selector">
                     <label for="actionSelect" class="action-label">Select Action:</label>
@@ -64,7 +68,6 @@ function createPopup() {
                 <div class="output-container">
                     <pre id="aiOutput" class="output-display"></pre>
                 </div>
-                <button id="closePopup" class="close-button">Close</button>
             </div>
         </div>
     `;
@@ -143,11 +146,35 @@ function createPrompt(action, code, targetLang) {
                     4. **Notable Patterns** – Identify any significant coding patterns, optimizations, or best practices.
 
                     Provide clear explanations with examples if needed. Only analyze programming code—if no valid code is provided, respond with:
-                    'I am a code tutor, I can only explain programming codes.' The code it \n\n${code}\n\n you have to analyze this in all point of view
+                    'I am a code tutor, I can only explain programming codes.'
+
+                    ### Input Code:
+                    \\\`\${code}
+                    \\\`
+                    
+                    ### Explanation:
                     `
                 ,
-        convert: `You are the world's best code convertor. Convert this code to ${targetLang} following best practices:\n\n${code}\n\nInclude comments explaining key changes also you should ensure that the code should include basic preprocessor derivates in the converted code if you can't include that pls give some command line with that preprocessor derivative like in C++ '#include<iostream>' is manditary for every C++ code and you should be more consistant while giving the complex codes and the syntax of the converted code should be run on any complier without making furthrer changes.`,
-        highlight: `You are the world's biggest Software Developer, an expert in identifying and fixing code issues. you don't need to consider the programming language, just analyze the code for any potential issues. You dont give acknowledgement for each lines you give only on the error lines
+        convert: `You are the world's biggest code conversion expert. Convert the provided code to \${targetLang} while maintaining best practices.
+
+                    ### Key Requirements:
+                    - Ensure that the converted \${targetLang} code follows **best practices**.
+                    - *Import all necessary libraries* required for \${targetLang}.
+                    - The syntax must be *100% correct* with no type errors.
+                    - Use *appropriate data structures and methods* equivalent to the original language.
+                    - Add meaningful *comments* explaining key changes in the converted code.
+                    - The conversion should be *executable without modifications*.
+
+                    ### Input Code:
+                    \\\`\${sourceLang}
+                    \${code}
+                    \\\`
+
+                    ### Output Code in \${targetLang}:
+                    \\\`\${targetLang}
+                    `
+                ,
+        highlight: `You are the world's biggest Software Developer, an expert in identifying and fixing code issues. 
 
                     ### Task:
                     Analyze the provided code for:
@@ -210,6 +237,21 @@ function addPopupStyles() {
             font-weight: bold;
             border-radius: 10px 10px 0 0;
             cursor: move;
+            position: relative;
+        }
+        .popup-header #closePopup {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 5px;
+        }
+        .popup-header #closePopup:hover {
+            color: #ffcccc;
         }
         .popup-content {
             padding: 20px;
@@ -239,14 +281,17 @@ function addPopupStyles() {
             resize: vertical;
         }
         .analyze-button, .close-button {
-            padding: 10px 20px;
+            // padding: 15px ;
+            padding-top: 5px;
+            padding-left: 15px;
+            padding-bottom: 20px;
+            padding-right: 15px;
             background: #007BFF;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
-            margin-top: 10px;
         }
         .analyze-button:hover, .close-button:hover {
             background: #0056b3;
@@ -307,6 +352,64 @@ function makeDraggable(element) {
     function closeDrag() {
         document.onmouseup = null;
         document.onmousemove = null;
+    }
+}
+
+// Theme Handling
+function applyGitHubTheme() {
+    const theme = document.documentElement.getAttribute('data-color-mode');
+    const colorMode = document.documentElement.getAttribute('data-light-theme') || document.documentElement.getAttribute('data-dark-theme');
+
+    const themeColors = {
+        'light': {
+            background: '#ffffff',
+            border: '#d0d7de',
+            text: '#1f2328',
+            header: '#f6f8fa',
+            button: '#007BFF',
+            buttonHover: '#0056b3'
+        },
+        'dark': {
+            background: '#0d1117',
+            border: '#30363d',
+            text: '#c9d1d9',
+            header: '#161b22',
+            button: '#238636',
+            buttonHover: '#2ea043'
+        },
+        'dark_high_contrast': {
+            background: '#000000',
+            border: '#f0f6fc',
+            text: '#f0f6fc',
+            header: '#1f6feb',
+            button: '#f9826c',
+            buttonHover: '#ff7b72'
+        },
+        'dark_dimmed': {
+            background: '#161b22',
+            border: '#30363d',
+            text: '#adbac7',
+            header: '#21262d',
+            button: '#238636',
+            buttonHover: '#2ea043'
+        }
+    };
+
+    const selectedTheme = theme === 'dark' ? (colorMode || 'dark') : 'light';
+    const colors = themeColors[selectedTheme] || themeColors['light'];
+
+    const popup = document.getElementById('codeExplainPopup');
+    if (popup) {
+        popup.style.background = colors.background;
+        popup.style.borderColor = colors.border;
+        popup.style.color = colors.text;
+        popup.querySelector('.popup-header').style.background = colors.header;
+        const buttons = popup.querySelectorAll('.analyze-button, .close-button');
+        buttons.forEach(btn => {
+            btn.style.background = colors.button;
+            btn.addEventListener('mouseover', () => btn.style.background = colors.buttonHover);
+            btn.addEventListener('mouseout', () => btn.style.background = colors.button);
+        });
     }
 }
 
