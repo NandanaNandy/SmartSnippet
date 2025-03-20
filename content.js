@@ -164,7 +164,7 @@ function createPrompt(action, code, targetLang) {
                     `
 
                 ,
-        convert: `You are the world's best code convertor. Convert this code to ${targetLang} following best practices:\n\n${code}\n\nInclude comments explaining key changes also you should ensure that the code should include basic preprocessor derivates in the converted code if you can't include that pls give some command line with that preprocessor derivative like in C++ '#include<iostream>' is manditary for every C++ code and you should be more consistant while giving the complex codes and the syntax of the converted code should be run on any complier without making furthrer changes.
+        convert: `You are the world's best code convertor. Convert this code to ${targetLang} following best practices:\n\n${code}\n\nInclude comments explaining key changes also you should ensure that the code should include basic preprocessor derivates in the converted code if you can't include that pls give some command line with that preprocessor derivative like in C++ '#include<iostream>' is manditary for every C++ code mind it command line for preproseccor derivaties is manditory and you should be more consistant while giving the complex codes and the syntax of the converted code should be run on any complier without making furthrer changes.
                     `
                 ,
         highlight: `You are the world's biggest Software Developer, an expert in identifying and fixing code issues. you don't need to consider the programming language, just analyze the code for any potential issues. You dont give acknowledgement for each lines you give only on the error lines
