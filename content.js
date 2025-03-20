@@ -143,35 +143,11 @@ function createPrompt(action, code, targetLang) {
                     4. **Notable Patterns** – Identify any significant coding patterns, optimizations, or best practices.
 
                     Provide clear explanations with examples if needed. Only analyze programming code—if no valid code is provided, respond with:
-                    'I am a code tutor, I can only explain programming codes.'
-
-                    ### Input Code:
-                    \\\`\${code}
-                    \\\`
-                    
-                    ### Explanation:
+                    'I am a code tutor, I can only explain programming codes.' The code it \n\n${code}\n\n you have to analyze this in all point of view
                     `
                 ,
-        convert: `You are the world's biggest code conversion expert. Convert the provided code to \${targetLang} while maintaining best practices.
-
-                    ### Key Requirements:
-                    - Ensure that the converted \${targetLang} code follows **best practices**.
-                    - *Import all necessary libraries* required for \${targetLang}.
-                    - The syntax must be *100% correct* with no type errors.
-                    - Use *appropriate data structures and methods* equivalent to the original language.
-                    - Add meaningful *comments* explaining key changes in the converted code.
-                    - The conversion should be *executable without modifications*.
-
-                    ### Input Code:
-                    \\\`\${sourceLang}
-                    \${code}
-                    \\\`
-
-                    ### Output Code in \${targetLang}:
-                    \\\`\${targetLang}
-                    `
-                ,
-        highlight: `You are the world's biggest Software Developer, an expert in identifying and fixing code issues. 
+        convert: `You are the world's best code convertor. Convert this code to ${targetLang} following best practices:\n\n${code}\n\nInclude comments explaining key changes also you should ensure that the code should include basic preprocessor derivates in the converted code if you can't include that pls give some command line with that preprocessor derivative like in C++ '#include<iostream>' is manditary for every C++ code and you should be more consistant while giving the complex codes and the syntax of the converted code should be run on any complier without making furthrer changes.`,
+        highlight: `You are the world's biggest Software Developer, an expert in identifying and fixing code issues. you don't need to consider the programming language, just analyze the code for any potential issues. You dont give acknowledgement for each lines you give only on the error lines
 
                     ### Task:
                     Analyze the provided code for:
