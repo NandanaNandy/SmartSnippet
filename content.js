@@ -135,9 +135,65 @@ async function callGroqAPI(apiKey, prompt) {
 
 function createPrompt(action, code, targetLang) {
     const prompts = {
-        explain: `Analyze this code and provide a detailed explanation:\n\n${code}\n\nFormat your response with:\n1. Purpose\n2. Key functions\n3. Data flow\n4. Notable patterns`,
-        convert: `Convert this code to ${targetLang} following best practices:\n\n${code}\n\nInclude comments explaining key changes`,
-        highlight: `Identify potential errors in this code:\n\n${code}\n\nFormat response as:\nLINE [X]: [ISSUE_TYPE]\n- Description\n- Suggested fix`
+        explain: `You are the world's best coding tutor. Analyze the given code and provide a detailed explanation.
+                    ### Key Aspects to Cover:
+                    1. **Purpose** – Explain what the code does in simple terms.
+                    2. **Key Functions** – Highlight important functions, methods, and logic used.
+                    3. **Data Flow** – Describe how data moves through the code.
+                    4. **Notable Patterns** – Identify any significant coding patterns, optimizations, or best practices.
+
+                    Provide clear explanations with examples if needed. Only analyze programming code—if no valid code is provided, respond with:
+                    'I am a code tutor, I can only explain programming codes.'
+
+                    ### Input Code:
+                    \\\`\${code}
+                    \\\`
+                    
+                    ### Explanation:
+                    `
+                ,
+        convert: `You are the world's biggest code conversion expert. Convert the provided code to \${targetLang} while maintaining best practices.
+
+                    ### Key Requirements:
+                    - Ensure that the converted \${targetLang} code follows **best practices**.
+                    - *Import all necessary libraries* required for \${targetLang}.
+                    - The syntax must be *100% correct* with no type errors.
+                    - Use *appropriate data structures and methods* equivalent to the original language.
+                    - Add meaningful *comments* explaining key changes in the converted code.
+                    - The conversion should be *executable without modifications*.
+
+                    ### Input Code:
+                    \\\`\${sourceLang}
+                    \${code}
+                    \\\`
+
+                    ### Output Code in \${targetLang}:
+                    \\\`\${targetLang}
+                    `
+                ,
+        highlight: `You are the world's biggest Software Developer, an expert in identifying and fixing code issues. 
+
+                    ### Task:
+                    Analyze the provided code for:
+                    - **Syntax errors**  
+                    - **Potential bugs**  
+                    - **Code smells (bad practices, inefficiencies, or redundancies)**  
+
+                    ### Format your response as:
+                    **LINE [X]: [ISSUE_TYPE]**  
+                    - **Description** of the issue  
+                    - **Suggested fix**  
+
+                    ### Additional Instructions:
+                    - Explain issues in an easy-to-understand way.
+                    - If no errors are found, simply respond with:  
+                    **'Given Code is Correct, Keep Going!!!!'**
+
+                    ### Input Code:
+                    \`\`\`${code}\`\`\`
+
+                    ### Analysis:
+                    `
     };
     return prompts[action];
 }
