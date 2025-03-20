@@ -175,25 +175,25 @@ function createPrompt(action, code, targetLang) {
 
                     ### Task:
                     Analyze the provided code for:
-                    - *Syntax errors*  
-                    - *Potential bugs*  
-                    - *Code smells (bad practices, inefficiencies, or redundancies)*  
+                    - Syntax errors  
+                    - Potential bugs  
+                    - Code smells (bad practices, inefficiencies, or redundancies)  
 
                     ### Format your response as:
-                    *LINE [X]: [ISSUE_TYPE]*  
-                    - *Description* of the issue  
-                    - *Suggested fix*  
+                    LINE [X]: [ISSUE_TYPE]  
+                    - Description of the issue  
+                    - Suggested fix  
 
                     ### Additional Instructions:
                     - Explain issues in an easy-to-understand way.
                     - If no errors are found, simply respond with:  
-                    *'Given Code is Correct, Keep Going!!!!'*
+                    'Given Code is Correct, Keep Going!!!!'
 
                     ### Input Code:
-                    \\\${code}\\\
+                    \n\n${code}\n\n
 
                     ### Analysis:
-                    `
+                    `
     };
     return prompts[action];
 }
