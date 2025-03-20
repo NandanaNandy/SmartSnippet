@@ -1,26 +1,30 @@
 // UI Elements
-const codeExplainUrl = chrome.runtime.getURL('icons/icon2.png');
+const codeExplainUrl = chrome.runtime.getURL('icons/icon128.png');
 function addCodeExplainButton() {
     const existingButton = document.querySelector('.AppHeader-button.AppHeader-search-whenNarrow');
     if (existingButton && !document.getElementById('codeExplainButton')) {
         const button = document.createElement('button');
         button.id = 'codeExplainButton';
-        button.innerHTML = `<img src="${codeExplainUrl}" alt="Code Explain" style="width: 20px; height: 20px;">`;
+        button.innerHTML = `<img src="${codeExplainUrl}" alt="Code Explain" style="width: 18px; height: 18px;">`;
 
         // Determine theme-based colors
         const theme = document.documentElement.getAttribute('data-color-mode');
         const colorMode = document.documentElement.getAttribute('data-light-theme') || document.documentElement.getAttribute('data-dark-theme');
         const themeColors = {
-            'light': { background: 'rgb(255, 255, 255)', border: 'rgb(208, 215, 222)' },
+            'light': { background: 'rgb(211, 217, 226)', border: 'rgb(168, 173, 179)' },
             'dark': { background: 'rgb(13, 17, 23)', border: 'rgb(48, 54, 61)' },
-            'dark_high_contrast': { background: 'rgb(0, 0, 0)', border: 'rgb(226, 240, 255)' },
+            'dark_high_contrast': { background: 'rgb(0, 0, 0)', border: 'rgb(220, 226, 232)' },
             'dark_dimmed': { background: 'rgb(22, 27, 34)', border: 'rgb(48, 54, 61)' }
         };
         const selectedTheme = theme === 'dark' ? (colorMode || 'dark') : 'light';
         const colors = themeColors[selectedTheme] || themeColors['light'];
 
         Object.assign(button.style, {
-            padding: '8px',
+            // padding: '3px',
+            paddingLeft: '3px',
+            paddingRight: '3px',
+            paddingTop: '5px',
+            paddingBottom: '1px',
             background: colors.background,
             border: `1px solid ${colors.border}`,
             borderRadius: '6px',
