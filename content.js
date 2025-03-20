@@ -6,14 +6,28 @@ function addCodeExplainButton() {
         const button = document.createElement('button');
         button.id = 'codeExplainButton';
         button.innerHTML = `<img src="${codeExplainUrl}" alt="Code Explain" style="width: 20px; height: 20px;">`;
+
+        // Determine theme-based colors
+        const theme = document.documentElement.getAttribute('data-color-mode');
+        const colorMode = document.documentElement.getAttribute('data-light-theme') || document.documentElement.getAttribute('data-dark-theme');
+        const themeColors = {
+            'light': { background: 'rgb(255, 255, 255)', border: 'rgb(208, 215, 222)' },
+            'dark': { background: 'rgb(13, 17, 23)', border: 'rgb(48, 54, 61)' },
+            'dark_high_contrast': { background: 'rgb(0, 0, 0)', border: 'rgb(226, 240, 255)' },
+            'dark_dimmed': { background: 'rgb(22, 27, 34)', border: 'rgb(48, 54, 61)' }
+        };
+        const selectedTheme = theme === 'dark' ? (colorMode || 'dark') : 'light';
+        const colors = themeColors[selectedTheme] || themeColors['light'];
+
         Object.assign(button.style, {
             padding: '8px',
-            background: 'white',
-            border: '1px solid #f6f8fa',
+            background: colors.background,
+            border: `1px solid ${colors.border}`,
             borderRadius: '6px',
             cursor: 'pointer',
             marginRight: '10px'
         });
+
         existingButton.parentNode.insertBefore(button, existingButton);
         button.addEventListener('click', openCodeExplain);
     }
@@ -27,7 +41,7 @@ function openCodeExplain() {
     chrome.storage.local.get(['apiKey'], (result) => {
         const apiKey = result.apiKey;
         if (!apiKey) {
-            alert('⚠️ Please configure your Groq API key first!');
+            alert('⚠️ Please configure your API key first!');
             return;
         }
 
@@ -138,9 +152,65 @@ async function callGroqAPI(apiKey, prompt) {
 
 function createPrompt(action, code, targetLang) {
     const prompts = {
-        explain: `Analyze this code and provide a detailed explanation:\n\n${code}\n\nFormat your response with:\n1. Purpose\n2. Key functions\n3. Data flow\n4. Notable patterns`,
-        convert: `Convert this code to ${targetLang} following best practices:\n\n${code}\n\nInclude comments explaining key changes`,
-        highlight: `Identify potential errors in this code:\n\n${code}\n\nFormat response as:\nLINE [X]: [ISSUE_TYPE]\n- Description\n- Suggested fix`
+        explain: `You are the world's best coding tutor. Analyze the given code and provide a detailed explanation.
+                    ### Key Aspects to Cover:
+                    1. *Purpose* – Explain what the code does in simple terms.
+                    2. *Key Functions* – Highlight important functions, methods, and logic used.
+                    3. *Data Flow* – Describe how data moves through the code.
+                    4. *Notable Patterns* – Identify any significant coding patterns, optimizations, or best practices.
+
+                    Provide clear explanations with examples if needed. Only analyze programming code—if no valid code is provided, respond with:
+                    'I am a code tutor, I can only explain programming codes.'
+
+                    ### Input Code:
+                    \\\`\${code}
+                    \\\`
+                    
+                    ### Explanation:
+                    `
+                ,
+        convert: `You are the world's biggest code conversion expert. Convert the provided code to \${targetLang} while maintaining best practices.
+
+                    ### Key Requirements:
+                    - Ensure that the converted \${targetLang} code follows *best practices*.
+                    - Import all necessary libraries required for \${targetLang}.
+                    - The syntax must be 100% correct with no type errors.
+                    - Use appropriate data structures and methods equivalent to the original language.
+                    - Add meaningful comments explaining key changes in the converted code.
+                    - The conversion should be executable without modifications.
+
+                    ### Input Code:
+                    \\\`\${sourceLang}
+                    \${code}
+                    \\\`
+
+                    ### Output Code in \${targetLang}:
+                    \\\`\${targetLang}
+                    `
+                ,
+        highlight: `You are the world's biggest Software Developer, an expert in identifying and fixing code issues. 
+
+                    ### Task:
+                    Analyze the provided code for:
+                    - *Syntax errors*  
+                    - *Potential bugs*  
+                    - *Code smells (bad practices, inefficiencies, or redundancies)*  
+
+                    ### Format your response as:
+                    *LINE [X]: [ISSUE_TYPE]*  
+                    - *Description* of the issue  
+                    - *Suggested fix*  
+
+                    ### Additional Instructions:
+                    - Explain issues in an easy-to-understand way.
+                    - If no errors are found, simply respond with:  
+                    *'Given Code is Correct, Keep Going!!!!'*
+
+                    ### Input Code:
+                    \\\${code}\\\
+
+                    ### Analysis:
+                    `
     };
     return prompts[action];
 }
@@ -165,8 +235,8 @@ function addPopupStyles() {
             position: fixed;
             top: 50px;
             right: 20px;
-            background: #ffffff;
-            border: 1px solid #ccc;
+            background: rgb(255, 255, 255);
+            border: 1px solid rgb(204, 204, 204);
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             z-index: 9999;
@@ -175,7 +245,7 @@ function addPopupStyles() {
         }
         .popup-header {
             padding: 15px;
-            background: #007BFF;
+            background: rgb(0, 123, 255);
             color: white;
             font-size: 16px;
             font-weight: bold;
@@ -195,7 +265,7 @@ function addPopupStyles() {
             margin-bottom: 5px;
         }
         .popup-header #closePopup:hover {
-            color: #ffcccc;
+            color: rgb(255, 204, 204);
         }
         .popup-content {
             padding: 20px;
@@ -210,7 +280,7 @@ function addPopupStyles() {
             width: 100%;
             padding: 8px;
             margin-bottom: 15px;
-            border: 1px solid #ccc;
+            border: 1px solid rgb(204, 204, 204);
             border-radius: 6px;
             font-size: 14px;
         }
@@ -219,7 +289,7 @@ function addPopupStyles() {
             height: 150px;
             margin: 10px 0;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid rgb(204, 204, 204);
             border-radius: 6px;
             font-size: 14px;
             resize: vertical;
@@ -228,9 +298,9 @@ function addPopupStyles() {
             // padding: 15px ;
             padding-top: 5px;
             padding-left: 15px;
-            padding-bottom: 20px;
+            padding-bottom: 10px;
             padding-right: 15px;
-            background: #007BFF;
+            background: rgb(0, 123, 255);
             color: white;
             border: none;
             border-radius: 6px;
@@ -238,29 +308,29 @@ function addPopupStyles() {
             font-size: 14px;
         }
         .analyze-button:hover, .close-button:hover {
-            background: #0056b3;
+            background: rgb(0, 86, 179);
         }
         .output-container {
             margin-top: 15px;
         }
         .output-display {
             white-space: pre-wrap;
-            background: #f8f9fa;
+            background: rgb(248, 249, 250);
             padding: 15px;
-            border: 1px solid #ccc;
+            border: 1px solid rgb(204, 204, 204);
             border-radius: 6px;
             max-height: 300px;
             overflow-y: auto;
             font-size: 14px;
         }
         .error-highlight {
-            color: #dc3545;
-            background: #ffecec;
+            color: rgb(220, 53, 69);
+            background: rgb(255, 236, 236);
             padding: 2px 4px;
             border-radius: 4px;
         }
         .success-message {
-            color: #28a745;
+            color: rgb(40, 167, 69);
             font-weight: bold;
         }
     `;
@@ -306,36 +376,36 @@ function applyGitHubTheme() {
 
     const themeColors = {
         'light': {
-            background: '#ffffff',
-            border: '#d0d7de',
-            text: '#1f2328',
-            header: '#f6f8fa',
-            button: '#007BFF',
-            buttonHover: '#0056b3'
+            background: 'rgb(255, 255, 255)',
+            border: 'rgb(208, 215, 222)',
+            text: 'rgb(31, 35, 40)',
+            header: 'rgb(246, 248, 250)',
+            button: 'rgb(0, 123, 255)',
+            buttonHover: 'rgb(0, 86, 179)'
         },
         'dark': {
-            background: '#0d1117',
-            border: '#30363d',
-            text: '#c9d1d9',
-            header: '#161b22',
-            button: '#238636',
-            buttonHover: '#2ea043'
+            background: 'rgb(13, 17, 23)',
+            border: 'rgb(48, 54, 61)',
+            text: 'rgb(201, 209, 217)',
+            header: 'rgb(22, 27, 34)',
+            button: 'rgb(35, 134, 54)',
+            buttonHover: 'rgb(46, 160, 67)'
         },
         'dark_high_contrast': {
-            background: '#000000',
-            border: '#f0f6fc',
-            text: '#f0f6fc',
-            header: '#1f6feb',
-            button: '#f9826c',
-            buttonHover: '#ff7b72'
+            background: 'rgb(0, 0, 0)',
+            border: 'rgb(240, 246, 252)',
+            text: 'rgb(240, 246, 252)',
+            header: 'rgb(31, 111, 235)',
+            button: 'rgb(249, 130, 108)',
+            buttonHover: 'rgb(255, 123, 114)'
         },
         'dark_dimmed': {
-            background: '#161b22',
-            border: '#30363d',
-            text: '#adbac7',
-            header: '#21262d',
-            button: '#238636',
-            buttonHover: '#2ea043'
+            background: 'rgb(22, 27, 34)',
+            border: 'rgb(48, 54, 61)',
+            text: 'rgb(173, 186, 199)',
+            header: 'rgb(33, 38, 45)',
+            button: 'rgb(35, 134, 54)',
+            buttonHover: 'rgb(46, 160, 67)'
         }
     };
 
@@ -347,7 +417,8 @@ function applyGitHubTheme() {
         popup.style.background = colors.background;
         popup.style.borderColor = colors.border;
         popup.style.color = colors.text;
-        popup.querySelector('.popup-header').style.background = colors.header;
+        popup.querySelector('.popup-header').style.background = colors.header; // Dynamically set header color
+        popup.querySelector('.popup-header').style.color = colors.text; // Adjust text color for header
         const buttons = popup.querySelectorAll('.analyze-button, .close-button');
         buttons.forEach(btn => {
             btn.style.background = colors.button;
