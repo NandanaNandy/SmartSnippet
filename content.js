@@ -1,418 +1,547 @@
-// UI Elements
-const codeExplainUrl = chrome.runtime.getURL('icons/icon128.png');
-function addCodeExplainButton() {
-    const existingButton = document.querySelector('.AppHeader-button.AppHeader-search-whenNarrow');
-    if (existingButton && !document.getElementById('codeExplainButton')) {
-        const button = document.createElement('button');
-        button.id = 'codeExplainButton';
-        button.innerHTML = `<img src="${codeExplainUrl}" alt="Code Explain" style="width: 18px; height: 18px;">`;
+// // Check if the current page is a GitHub code file
+// function isGitHubCodeFile() {
+//     return window.location.pathname.includes("/blob/");
+// }
 
-        // Determine theme-based colors
-        const theme = document.documentElement.getAttribute('data-color-mode');
-        const colorMode = document.documentElement.getAttribute('data-light-theme') || document.documentElement.getAttribute('data-dark-theme');
-        const themeColors = {
-            'light': { background: 'rgb(211, 217, 226)', border: 'rgb(168, 173, 179)' },
-            'dark': { background: 'rgb(13, 17, 23)', border: 'rgb(48, 54, 61)' },
-            'dark_high_contrast': { background: 'rgb(0, 0, 0)', border: 'rgb(220, 226, 232)' },
-            'dark_dimmed': { background: 'rgb(22, 27, 34)', border: 'rgb(48, 54, 61)' }
-        };
-        const selectedTheme = theme === 'dark' ? (colorMode || 'dark') : 'light';
-        const colors = themeColors[selectedTheme] || themeColors['light'];
+// // Extract code from GitHub code viewer
+// function extractCode() {
+//     let codeLines = document.querySelectorAll('.blob-code');
+//     if (codeLines.length === 0) {
+//         // Fallback to try other selectors if GitHub changes their DOM
+//         codeLines = document.querySelectorAll('table[data-tagsearch-lang] .js-file-line');
+//     }
+//     return Array.from(codeLines).map(line => line.innerText).join('\n');
+// }
 
-        Object.assign(button.style, {
-            // padding: '3px',
-            paddingLeft: '3px',
-            paddingRight: '3px',
-            paddingTop: '5px',
-            paddingBottom: '1px',
-            background: colors.background,
-            border: `1px solid ${colors.border}`,
-            borderRadius: '6px',
-            cursor: 'pointer',
-            marginRight: '10px'
-        });
+// // Inject the "Explain Code" button inside GitHub's toolbar
+// function addExplainCodeIcon() {
+//     if (document.getElementById("explain-code-icon")) return; // Prevent duplicates
 
-        existingButton.parentNode.insertBefore(button, existingButton);
-        button.addEventListener('click', openCodeExplain);
-    }
-}
+//     // Try multiple selectors to find the toolbar - GitHub changes their UI often
+//     let toolbar = document.querySelector(".file-actions") || 
+//                   document.querySelector(".repository-content .d-flex") ||
+//                   document.querySelector(".Box-header");
+                  
+//     if (!toolbar) return;
 
+//     let button = document.createElement("button");
+//     button.id = "explain-code-icon";
+//     button.innerText = "💡 Explain";
+//     button.style.padding = "5px 10px";
+//     button.style.marginLeft = "10px";
+//     button.style.border = "none";
+//     button.style.background = "#28a745"; // GitHub green
+//     button.style.color = "white";
+//     button.style.fontSize = "14px";
+//     button.style.cursor = "pointer";
+//     button.style.borderRadius = "4px";
 
-// Main Popup Logic
-function openCodeExplain() {
-    if (document.getElementById('codeExplainPopup')) return;
+//     button.onclick = () => {
+//         toggleSidebar();
+//         let extractedCode = extractCode();
+//         if (!extractedCode.trim()) {
+//             document.getElementById("explanation-content").innerHTML = "<p style='color:red;'>⚠ No code found.</p>";
+//             return;
+//         }
+//         document.getElementById("explanation-content").innerHTML = "<p>⏳ Fetching explanation...</p>";
+//         chrome.runtime.sendMessage({ action: "explainCode", code: extractedCode });
+//     };
 
-    chrome.storage.local.get(['apiKey'], (result) => {
-        const apiKey = result.apiKey;
-        if (!apiKey) {
-            alert('⚠️ Please configure your API key first!');
-            return;
-        }
+//     toolbar.appendChild(button);
+// }
 
-        const popup = createPopup();
-        setupPopupLogic(popup, apiKey);
-        applyGitHubTheme(); // Apply theme after popup creation
-    });
-}
-
-function createPopup() {
-    const popup = document.createElement('div');
-    popup.id = 'codeExplainPopup';
-    popup.innerHTML = `
-        <div class="popup-container">
-            <div class="popup-header">
-                Code Assistant 🔍
-                <button id="closePopup" class="close-button">✖</button>
-            </div>
-            <div class="popup-content">
-                <div class="action-selector">
-                    <label for="actionSelect" class="action-label">Select Action:</label>
-                    <select id="actionSelect" class="action-dropdown">
-                        <option value="explain">Explain Code</option>
-                        <option value="convert">Convert Code</option>
-                        <option value="highlight">Find Errors</option>
-                    </select>
-                    <div id="languageSection" style="display:none;">
-                        <label for="targetLanguage" class="language-label">Target Language:</label>
-                        <input id="targetLanguage" placeholder="Target language..." list="languages" class="language-input">
-                        <datalist id="languages">
-                            ${['Python', 'JavaScript', 'Java', 'C++', 'Ruby', 'Go']
-                              .map(l => `<option>${l}</option>`).join('')}
-                        </datalist>
-                    </div>
-                </div>
-                <textarea id="codeInput" placeholder="Paste your code here..." class="code-textarea"></textarea>
-                <button id="analyzeButton" class="analyze-button">Analyze</button>
-                <div class="output-container">
-                    <pre id="aiOutput" class="output-display"></pre>
-                </div>
-            </div>
-        </div>
-    `;
-
-    addPopupStyles();
-    document.body.appendChild(popup);
-    makeDraggable(popup);
-    return popup;
-}
-
-function setupPopupLogic(popup, apiKey) {
-    const actionSelect = popup.querySelector('#actionSelect');
-    const languageSection = popup.querySelector('#languageSection');
-    const analyzeButton = popup.querySelector('#analyzeButton');
-    const outputElement = popup.querySelector('#aiOutput');
-
-    actionSelect.addEventListener('change', () => {
-        languageSection.style.display = actionSelect.value === 'convert' ? 'block' : 'none';
-    });
-
-    analyzeButton.addEventListener('click', async () => {
-        const code = popup.querySelector('#codeInput').value.trim();
-        const action = actionSelect.value;
-        const targetLang = popup.querySelector('#targetLanguage').value;
-
-        if (!code) {
-            outputElement.textContent = 'Please enter some code to analyze!';
-            return;
-        }
-
-        try {
-            outputElement.innerHTML = '<em>Analyzing code...</em>';
-            const prompt = createPrompt(action, code, targetLang);
-            const result = await callGroqAPI(apiKey, prompt);
-            outputElement.innerHTML = formatOutput(action, result);
-        } catch (error) {
-            outputElement.innerHTML = `<span class="error-highlight">Error: ${error.message}</span>`;
-        }
-    });
-
-    popup.querySelector('#closePopup').addEventListener('click', () => popup.remove());
-}
-
-// Groq API Integration
-async function callGroqAPI(apiKey, prompt) {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            model: "llama3-8b-8192",
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.3,
-            max_tokens: 1000
-        })
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'API request failed');
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content.trim();
-}
-
-function createPrompt(action, code, targetLang) {
-    const prompts = {
-        explain: `You are the world's best coding tutor. Analyze the given code and provide a detailed explanation.
-                    ### Key Aspects to Cover:
-                    1. *Purpose* – Explain what the code does in simple terms.
-                    2. *Key Functions* – Highlight important functions, methods, and logic used.
-                    3. *Data Flow* – Describe how data moves through the code.
-                    4. *Notable Patterns* – Identify any significant coding patterns, optimizations, or best practices.
-
-                    Provide clear explanations with examples if needed. Only analyze programming code—if no valid code is provided, respond with:
-                    'I am a code tutor, I can only explain programming codes.' The code it \n\n${code}\n\n you have to analyze this in all point of view
-                    `
-
-                ,
-        convert: `You are the world's best code convertor. Convert this code to ${targetLang} following best practices:\n\n${code}\n\nInclude comments explaining key changes also you should ensure that the code should include basic preprocessor derivates in the converted code if you can't include that pls give some command line with that preprocessor derivative like in C++ '#include<iostream>' is manditary for every C++ code mind it command line for preproseccor derivaties is manditoryand you should be more consistant while giving the complex codes and the syntax of the converted code should be run on any complier without making furthrer changes.
-                    `
-                ,
-        highlight: `You are the world's biggest Software Developer, an expert in identifying and fixing code issues. you don't need to consider the programming language, just analyze the code for any potential issues. You dont give acknowledgement for each lines you give only on the error lines
-
-                    ### Task:
-                    Analyze the provided code for:
-                    - Syntax errors  
-                    - Potential bugs  
-                    - Code smells (bad practices, inefficiencies, or redundancies)  
-
-                    ### Format your response as:
-                    LINE [X]: [ISSUE_TYPE]  
-                    - Description of the issue  
-                    - Suggested fix  
-
-                    ### Additional Instructions:
-                    - Explain issues in an easy-to-understand way.
-                    - If no errors are found, simply respond with:  
-                    'Given Code is Correct, Keep Going!!!!'
-
-                    ### Input Code:
-                    \n\n${code}\n\n
-
-                    ### Analysis:
-                    `
-    };
-    return prompts[action];
-}
-
-function formatOutput(action, result) {
-    if (action === 'highlight') {
-        if (result.toLowerCase().includes('no error')) {
-            return '<span class="success-message">✅ No critical issues found</span>';
-        }
-        return result.replace(/LINE \d+:.+/g, match => 
-            `<span class="error-highlight">${match}</span>`
-        );
-    }
-    return result.replace(/\n/g, '<br>');
-}
-
-// Style Management
-function addPopupStyles() {
-    const style = document.createElement('style');
-    style.textContent = `
-        #codeExplainPopup {
-            position: fixed;
-            top: 50px;
-            right: 20px;
-            background: rgb(255, 255, 255);
-            border: 1px solid rgb(204, 204, 204);
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            z-index: 9999;
-            width: 420px;
-            font-family: Arial, sans-serif;
-        }
-        .popup-header {
-            padding: 15px;
-            background: rgb(0, 123, 255);
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 10px 10px 0 0;
-            cursor: move;
-            position: relative;
-        }
-        .popup-header #closePopup {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            margin-bottom: 5px;
-        }
-        .popup-header #closePopup:hover {
-            color: rgb(255, 204, 204);
-        }
-        .popup-content {
-            padding: 20px;
-        }
-        .action-label, .language-label {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            display: block;
-        }
-        .action-dropdown, .language-input {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid rgb(204, 204, 204);
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        #codeInput {
-            width: 100%;
-            height: 150px;
-            margin: 10px 0;
-            padding: 10px;
-            border: 1px solid rgb(204, 204, 204);
-            border-radius: 6px;
-            font-size: 14px;
-            resize: vertical;
-        }
-        .analyze-button, .close-button {
-            // padding: 15px ;
-            padding-top: 5px;
-            padding-left: 15px;
-            padding-bottom: 10px;
-            padding-right: 15px;
-            background: rgb(0, 123, 255);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .analyze-button:hover, .close-button:hover {
-            background: rgb(0, 86, 179);
-        }
-        .output-container {
-            margin-top: 15px;
-        }
-        .output-display {
-            white-space: pre-wrap;
-            background: rgb(248, 249, 250);
-            padding: 15px;
-            border: 1px solid rgb(204, 204, 204);
-            border-radius: 6px;
-            max-height: 300px;
-            overflow-y: auto;
-            font-size: 14px;
-        }
-        .error-highlight {
-            color: rgb(220, 53, 69);
-            background: rgb(255, 236, 236);
-            padding: 2px 4px;
-            border-radius: 4px;
-        }
-        .success-message {
-            color: rgb(40, 167, 69);
-            font-weight: bold;
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-// Draggable Functionality
-function makeDraggable(element) {
-    const header = element.querySelector('.popup-header');
-    header.style.userSelect = 'none';
+// // Create or toggle sidebar for displaying explanation
+// function toggleSidebar() {
+//     let sidebar = document.getElementById("code-explainer-sidebar");
     
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-    header.onmousedown = dragMouseDown;
+//     if (sidebar) {
+//         sidebar.style.display = sidebar.style.display === "none" ? "flex" : "none";
+//         return;
+//     }
+    
+//     // Create sidebar if it doesn't exist
+//     sidebar = document.createElement("div");
+//     sidebar.id = "code-explainer-sidebar";
+//     sidebar.style = "position: fixed; top: 50px; right: 0; width: 400px; height: 80vh; background-color: #f8f9fa; border-left: 2px solid #ccc; box-shadow: -2px 0 10px rgba(0,0,0,0.1); padding: 15px; z-index: 10000; font-family: Arial, sans-serif; display: flex; flex-direction: column;";
 
-    function dragMouseDown(e) {
-        e.preventDefault();
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        document.onmouseup = closeDrag;
-        document.onmousemove = elementDrag;
-    }
+//     let header = document.createElement("div");
+//     header.style = "display: flex; justify-content: space-between; align-items: center;";
+    
+//     let title = document.createElement("h3");
+//     title.innerText = "Code Explanation";
+//     title.style.color = "#333";
+//     title.style.margin = "0";
+    
+//     let closeButton = document.createElement("button");
+//     closeButton.innerText = "×";
+//     closeButton.style = "background: none; border: none; font-size: 24px; cursor: pointer;";
+//     closeButton.onclick = function() {
+//         sidebar.style.display = "none";
+//     };
+    
+//     header.appendChild(title);
+//     header.appendChild(closeButton);
 
-    function elementDrag(e) {
-        e.preventDefault();
-        pos1 = pos3 - e.clientX;
-        pos2 = pos4 - e.clientY;
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        element.style.top = `${element.offsetTop - pos2}px`;
-        element.style.left = `${element.offsetLeft - pos1}px`;
-    }
+//     let explanationContainer = document.createElement("div");
+//     explanationContainer.id = "explanation-content";
+//     explanationContainer.style = "margin-top: 10px; overflow-y: auto; flex-grow: 1; white-space: pre-wrap;";
+//     explanationContainer.innerHTML = "Click 'Explain' to generate explanation.";
 
-    function closeDrag() {
-        document.onmouseup = null;
-        document.onmousemove = null;
-    }
+//     sidebar.appendChild(header);
+//     sidebar.appendChild(explanationContainer);
+//     document.body.appendChild(sidebar);
+// }
+
+// // Listen for explanation response from background.js
+// // chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+// //     if (request.action === "displayExplanation") {
+// //         let explanationContainer = document.getElementById("explanation-content");
+// //         if (explanationContainer) {
+// //             explanationContainer.innerHTML = request.explanation ? 
+// //                 `<div style="white-space: pre-wrap;">${request.explanation}</div>` : 
+// //                 "<p style='color:red;'>⚠ No explanation available.</p>";
+// //         }
+// //     } else if (request.action === "toggle") {
+// //         toggleSidebar();
+// //     }
+// // });
+
+// // Listen for explanation response from background.js
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+//     if (request.action === "displayExplanation") {
+//         let explanationContainer = document.getElementById("explanation-content");
+//         if (explanationContainer) {
+//             explanationContainer.innerHTML = request.explanation ? 
+//                 `<pre style="white-space: pre-wrap; background-color: #222; color: #fff; padding: 10px; border-radius: 5px;">
+//                     <code>${request.explanation.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code>
+//                  </pre>` 
+//                 : "<p style='color:red;'>⚠ No explanation available.</p>";
+//         }
+//     } else if (request.action === "toggle") {
+//         toggleSidebar();
+//     }
+// });
+
+// // Observer for GitHub's SPA navigation to detect when we navigate to a code file
+// const observer = new MutationObserver(function(mutations) {
+//     if (isGitHubCodeFile()) {
+//         setTimeout(addExplainCodeIcon, 1000); // Delay to ensure GitHub's UI is fully loaded
+//     }
+// });
+
+// // Start observing for GitHub's SPA navigation
+// observer.observe(document.body, { childList: true, subtree: true });
+
+// // Initial check when the content script loads
+// if (isGitHubCodeFile()) {
+//     addExplainCodeIcon();
+// }
+
+// function extractCode() {
+//     let codeBlocks = document.querySelectorAll('table.js-file-line-container td.blob-code');
+//     if (codeBlocks.length === 0) {
+//         codeBlocks = document.querySelectorAll('.blob-code-inner');
+//     }
+//     if (codeBlocks.length === 0) {
+//         console.error("No code found in GitHub file.");
+//         return "";
+//     }
+//     return Array.from(codeBlocks).map(line => line.innerText).join('\n');
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // Check if the current page is a GitHub code file
+// function isGitHubCodeFile() {
+//     return window.location.pathname.includes("/blob/");
+// }
+
+// // Extract code from GitHub code viewer
+// function extractCode() {
+//     let codeLines = document.querySelectorAll('.blob-code');
+//     if (codeLines.length === 0) {
+//         // Fallback to try other selectors if GitHub changes their DOM
+//         codeLines = document.querySelectorAll('table[data-tagsearch-lang] .js-file-line');
+//     }
+//     return Array.from(codeLines).map(line => line.innerText).join('\n');
+// }
+
+// // Inject the "Explain Code" button inside GitHub's toolbar
+// function addExplainCodeIcon() {
+//     if (document.getElementById("explain-code-icon")) return; // Prevent duplicates
+
+//     // Try multiple selectors to find the toolbar - GitHub changes their UI often
+//     let toolbar = document.querySelector(".file-actions") || 
+//                   document.querySelector(".repository-content .d-flex") ||
+//                   document.querySelector(".Box-header");
+                  
+//     if (!toolbar) return;
+
+//     let button = document.createElement("button");
+//     button.id = "explain-code-icon";
+//     button.innerText = "💡 Explain";
+//     button.style.padding = "5px 10px";
+//     button.style.marginLeft = "10px";
+//     button.style.border = "none";
+//     button.style.background = "#28a745"; // GitHub green
+//     button.style.color = "white";
+//     button.style.fontSize = "14px";
+//     button.style.cursor = "pointer";
+//     button.style.borderRadius = "4px";
+
+//     button.onclick = () => {
+//         toggleSidebar();
+//         let extractedCode = extractCode();
+//         if (!extractedCode.trim()) {
+//             document.getElementById("explanation-content").innerHTML = "<p style='color:red;'>⚠ No code found.</p>";
+//             return;
+//         }
+//         document.getElementById("explanation-content").innerHTML = "<p>⏳ Fetching explanation...</p>";
+//         chrome.runtime.sendMessage({ action: "explainCode", code: extractedCode });
+//     };
+
+//     toolbar.appendChild(button);
+// }
+
+// // Create or toggle sidebar for displaying explanation
+// function toggleSidebar() {
+//     let sidebar = document.getElementById("code-explainer-sidebar");
+    
+//     if (sidebar) {
+//         sidebar.style.display = sidebar.style.display === "none" ? "flex" : "none";
+//         return;
+//     }
+    
+//     // Create sidebar if it doesn't exist
+//     sidebar = document.createElement("div");
+//     sidebar.id = "code-explainer-sidebar";
+//     sidebar.style = "position: fixed; top: 50px; right: 0; width: 400px; height: 80vh; background-color: #f8f9fa; border-left: 2px solid #ccc; box-shadow: -2px 0 10px rgba(0,0,0,0.1); padding: 15px; z-index: 10000; font-family: Arial, sans-serif; display: flex; flex-direction: column;";
+
+//     let header = document.createElement("div");
+//     header.style = "display: flex; justify-content: space-between; align-items: center;";
+    
+//     let title = document.createElement("h3");
+//     title.innerText = "Code Explanation";
+//     title.style.color = "#333";
+//     title.style.margin = "0";
+    
+//     let closeButton = document.createElement("button");
+//     closeButton.innerText = "×";
+//     closeButton.style = "background: none; border: none; font-size: 24px; cursor: pointer;";
+//     closeButton.onclick = function() {
+//         sidebar.style.display = "none";
+//     };
+    
+//     header.appendChild(title);
+//     header.appendChild(closeButton);
+
+//     let explanationContainer = document.createElement("div");
+//     explanationContainer.id = "explanation-content";
+//     explanationContainer.style = "margin-top: 10px; overflow-y: auto; flex-grow: 1; white-space: pre-wrap;";
+//     explanationContainer.innerHTML = "Click 'Explain' to generate explanation.";
+
+//     sidebar.appendChild(header);
+//     sidebar.appendChild(explanationContainer);
+//     document.body.appendChild(sidebar);
+// }
+
+// // Function to add "Code Explain" button in GitHub Header
+// function addCodeExplainButton() {
+//     const headerRight = document.querySelector('.AppHeader-actions');
+
+//     if (headerRight && !document.getElementById('codeExplainButton')) {
+//         const button = document.createElement('button');
+//         button.id = 'codeExplainButton';
+//         button.innerHTML = "🔍 Code Explain";
+
+//         Object.assign(button.style, {
+//             padding: '8px',
+//             background: 'white',
+//             border: '1px solid #f6f8fa',
+//             borderRadius: '6px',
+//             cursor: 'pointer',
+//             marginRight: '10px'
+//         });
+
+//         // Insert the button into the GitHub header
+//         headerRight.insertBefore(button, headerRight.firstChild);
+
+//         // Add click event to send extracted code for explanation
+//         button.addEventListener('click', () => {
+//             let extractedCode = extractCode();
+//             if (!extractedCode.trim()) {
+//                 alert("⚠ No code found.");
+//                 return;
+//             }
+//             chrome.runtime.sendMessage({ action: "explainCode", code: extractedCode });
+//         });
+//     }
+// }
+
+// // Listen for explanation response from background.js
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+//     if (request.action === "displayExplanation") {
+//         let explanationContainer = document.getElementById("explanation-content");
+//         if (explanationContainer) {
+//             explanationContainer.innerHTML = request.explanation ? 
+//                 `<pre style="white-space: pre-wrap; background-color: #222; color: #fff; padding: 10px; border-radius: 5px;">
+//                     <code>${request.explanation.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code>
+//                  </pre>` 
+//                 : "<p style='color:red;'>⚠ No explanation available.</p>";
+//         }
+//     } else if (request.action === "toggle") {
+//         toggleSidebar();
+//     }
+// });
+
+// // Observer for GitHub's SPA navigation to detect when we navigate to a code file
+// const observer = new MutationObserver(function(mutations) {
+//     if (isGitHubCodeFile()) {
+//         setTimeout(addExplainCodeIcon, 1000); // Delay to ensure GitHub's UI is fully loaded
+//     }
+//     addCodeExplainButton();
+// });
+
+// // Start observing for GitHub's SPA navigation
+// observer.observe(document.body, { childList: true, subtree: true });
+
+// // Initial check when the content script loads
+// if (isGitHubCodeFile()) {
+//     addExplainCodeIcon();
+// }
+// addCodeExplainButton();
+
+// function extractCode() {
+//     let codeBlocks = document.querySelectorAll('table.js-file-line-container td.blob-code');
+//     if (codeBlocks.length === 0) {
+//         codeBlocks = document.querySelectorAll('.blob-code-inner');
+//     }
+//     if (codeBlocks.length === 0) {
+//         console.error("No code found in GitHub file.");
+//         return "";
+//     }
+//     return Array.from(codeBlocks).map(line => line.innerText).join('\n');
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const codeExplainUrl = chrome.runtime.getURL('icons/icon2.jpg');
+
+// function addCodeExplainButton() {
+//     console.log("Trying to add button...");
+
+//     const existingButton = document.querySelector('.AppHeader-button.AppHeader-search-whenNarrow');
+
+//     if (!existingButton) {
+//         console.log("Target button not found! Make sure the selector is correct.");
+//         return;
+//     }
+
+//     if (document.getElementById('codeExplainButton')) {
+//         console.log("Button already exists.");
+//         return;
+//     }
+
+//     const button = document.createElement('button');
+//     button.id = 'codeExplainButton';
+//     button.innerHTML = `<img src="${codeExplainUrl}" alt="Code Explain" style="width: 16px; height: 16px;">`;
+
+//     Object.assign(button.style, {
+//         padding: '4px',
+//         background: 'red',
+//         border: '1px solid #f6f8fa',
+//         borderRadius: '4px',
+//         cursor: 'pointer',
+//         marginRight: '8px'
+//     });
+
+//     existingButton.parentNode.insertBefore(button, existingButton);
+//     console.log("Button added successfully!");
+// }
+
+// new MutationObserver(() => {
+//     console.log("DOM changed, trying to insert button...");
+//     addCodeExplainButton();
+// }).observe(document.body, { childList: true, subtree: true });
+
+// addCodeExplainButton();
+
+// async function highlightErrors(code) {
+//     try {
+//         const data = await new Promise((resolve) => {
+//             chrome.storage.sync.get("apiKey", (result) => resolve(result));
+//         });
+
+//         const apiKey = data.apiKey;
+//         if (!apiKey) {
+//             throw new Error("API key not set. Please set your API key in the extension options.");
+//         }
+
+//         const API_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+//         const messages = [{
+//             role: "system",
+//             content: "You are the world's biggest Software Developer. You know each and everything about coding. Analyze the code for syntax errors, potential bugs, and code smells. List errors with line numbers and suggestions for fixes. Try to communicate in an easier way of understanding. If there are no errors in the code, tell 'Given Code is Correct, Keep Going!!!!'"
+//         }, {
+//             role: "user",
+//             content: `Find errors in this code:\n\n${code}`
+//         }];
+
+//         const response = await fetch(API_ENDPOINT, {
+//             method: "POST",
+//             headers: {
+//                 "Content-Type": "application/json",
+//                 "Authorization": `Bearer ${apiKey}`
+//             },
+//             body: JSON.stringify({
+//                 model: "llama3-8b-8192",
+//                 messages: messages,
+//                 temperature: 0.1
+//             })
+//         });
+
+//         if (!response.ok) {
+//             throw new Error(`API Error: ${response.status} ${response.statusText}`);
+//         }
+
+//         const responseData = await response.json();
+//         if (!responseData.choices || !responseData.choices[0] || !responseData.choices[0].message) {
+//             throw new Error("Invalid API response format");
+//         }
+
+//         return responseData.choices[0].message.content;
+//     } catch (error) {
+//         console.error("Error detection failed:", error);
+//         return `Error highlighting failed: ${error.message}`;
+//     }
+// }
+
+// if (typeof module !== 'undefined' && module.exports) {
+//     module.exports = highlightErrors;
+// } else {
+//     window.highlightErrors = highlightErrors;
+// }
+
+
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+//     if (request.action === "toggleSidebar") {
+//         toggleSidebar();
+//     }
+// });
+
+
+
+
+
+
+
+
+
+
+
+const codeExplainUrl = chrome.runtime.getURL('icons/icon2.jpg');
+
+// Function to check if the current page is a GitHub code file
+function isGitHubCodeFile() {
+    return window.location.pathname.includes("/blob/");
 }
 
-// Theme Handling
-function applyGitHubTheme() {
-    const theme = document.documentElement.getAttribute('data-color-mode');
-    const colorMode = document.documentElement.getAttribute('data-light-theme') || document.documentElement.getAttribute('data-dark-theme');
+// Function to extract code from the GitHub code viewer
+function extractCode() {
+    let codeBlocks = document.querySelectorAll('td.blob-code');
+    if (codeBlocks.length === 0) {
+        codeBlocks = document.querySelectorAll('table.highlight pre, table.js-file-line-container td');
+    }
 
-    const themeColors = {
-        'light': {
-            background: 'rgb(255, 255, 255)',
-            border: 'rgb(208, 215, 222)',
-            text: 'rgb(31, 35, 40)',
-            header: 'rgb(246, 248, 250)',
-            button: 'rgb(0, 123, 255)',
-            buttonHover: 'rgb(0, 86, 179)'
-        },
-        'dark': {
-            background: 'rgb(13, 17, 23)',
-            border: 'rgb(48, 54, 61)',
-            text: 'rgb(201, 209, 217)',
-            header: 'rgb(22, 27, 34)',
-            button: 'rgb(35, 134, 54)',
-            buttonHover: 'rgb(46, 160, 67)'
-        },
-        'dark_high_contrast': {
-            background: 'rgb(0, 0, 0)',
-            border: 'rgb(240, 246, 252)',
-            text: 'rgb(240, 246, 252)',
-            header: 'rgb(31, 111, 235)',
-            button: 'rgb(249, 130, 108)',
-            buttonHover: 'rgb(255, 123, 114)'
-        },
-        'dark_dimmed': {
-            background: 'rgb(22, 27, 34)',
-            border: 'rgb(48, 54, 61)',
-            text: 'rgb(173, 186, 199)',
-            header: 'rgb(33, 38, 45)',
-            button: 'rgb(35, 134, 54)',
-            buttonHover: 'rgb(46, 160, 67)'
+    let extractedCode = Array.from(codeBlocks).map(line => line.innerText.trim()).join('\n');
+
+    console.log("Extracted Code:", extractedCode); // Debugging Output
+
+    return extractedCode;
+}
+
+// Function to add the "Explain Code" button to GitHub
+function addCodeExplainButton() {
+    console.log("Trying to add button...");
+
+    // Select GitHub's action toolbar where buttons like "Raw", "Blame", and "History" exist
+    const toolbar = document.querySelector('.d-flex.gap-2'); // Update selector if needed
+
+    if (!toolbar) {
+        console.log("Toolbar not found! Check the selector.");
+        return;
+    }
+
+    if (document.getElementById('codeExplainButton')) {
+        console.log("Button already exists.");
+        return;
+    }
+
+    // const button = document.createElement('button');
+    // button.id = 'codeExplainButton';
+    // button.innerHTML = `<img src="${codeExplainUrl}" alt="Explain Code" style="width: 16px; height: 16px;"> Explain Code`;
+
+    // Object.assign(button.style, {
+    //     padding: '6px 10px',
+    //     background: '#2ea44f',
+    //     color: 'white',
+    //     border: '1px solid #f6f8fa',
+    //     borderRadius: '6px',
+    //     cursor: 'pointer',
+    //     fontSize: '14px',
+    //     fontWeight: 'bold',
+    //     display: 'flex',
+    //     alignItems: 'center',
+    //     gap: '5px'
+    // });
+
+    button.addEventListener('click', () => {
+        let extractedCode = extractCode();
+        if (!extractedCode.trim()) {
+            alert("⚠ No code found.");
+            return;
         }
-    };
+        chrome.runtime.sendMessage({ action: "explainCode", code: extractedCode });
+    });
 
-    const selectedTheme = theme === 'dark' ? (colorMode || 'dark') : 'light';
-    const colors = themeColors[selectedTheme] || themeColors['light'];
-
-    const popup = document.getElementById('codeExplainPopup');
-    if (popup) {
-        popup.style.background = colors.background;
-        popup.style.borderColor = colors.border;
-        popup.style.color = colors.text;
-        popup.querySelector('.popup-header').style.background = colors.header; // Dynamically set header color
-        popup.querySelector('.popup-header').style.color = colors.text; // Adjust text color for header
-        const buttons = popup.querySelectorAll('.analyze-button, .close-button');
-        buttons.forEach(btn => {
-            btn.style.background = colors.button;
-            btn.addEventListener('mouseover', () => btn.style.background = colors.buttonHover);
-            btn.addEventListener('mouseout', () => btn.style.background = colors.button);
-        });
-    }
+    toolbar.appendChild(button);
+    console.log("Button added successfully!");
 }
 
-// Observer Setup
-new MutationObserver(() => addCodeExplainButton())
-    .observe(document.body, { childList: true, subtree: true });
+// Observe page changes (SPA navigation) and insert the button if needed
+new MutationObserver(() => {
+    if (isGitHubCodeFile()) {
+        addCodeExplainButton();
+    }
+}).observe(document.body, { childList: true, subtree: true });
 
-addCodeExplainButton();
+// Initial check when the content script loads
+if (isGitHubCodeFile()) {
+    addCodeExplainButton();
+}
