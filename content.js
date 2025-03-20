@@ -164,14 +164,19 @@ function createPrompt(action, code, targetLang) {
                     4. *Notable Patterns* – Identify any significant coding patterns, optimizations, or best practices.
 
                     Provide clear explanations with examples if needed. Only analyze programming code—if no valid code is provided, respond with:
-                    'I am a code tutor, I can only explain programming codes.' The code it \n\n${code}\n\n you have to analyze this in all point of view
-                    `
+                    'I am a code tutor, I can only explain programming codes.' The code is:
 
-                ,
-        convert: `You are the world's best code convertor. Convert this code to ${targetLang} following best practices:\n\n${code}\n\nInclude comments explaining key changes also you should ensure that the code should include basic preprocessor derivates in the converted code if you can't include that pls give some command line with that preprocessor derivative like in C++ '#include<iostream>' is manditary for every C++ code mind it command line for preproseccor derivaties is manditoryand you should be more consistant while giving the complex codes and the syntax of the converted code should be run on any complier without making furthrer changes.
-                    `
-                ,
-        highlight: `You are the world's biggest Software Developer, an expert in identifying and fixing code issues. you don't need to consider the programming language, just analyze the code for any potential issues. You dont give acknowledgement for each lines you give only on the error lines
+                    ${code}
+
+                    You have to analyze this from all points of view.`
+        ,
+        convert: `You are the world's best code converter. Convert this code to ${targetLang} following best practices:
+
+                    ${code}
+
+                    Include comments explaining key changes. Ensure the converted code includes necessary preprocessor directives—like '#include<iostream>' for C++—or provide a command line with the required directives. The syntax should run on any compiler without further changes.`
+        ,
+        highlight: `You are the world's biggest Software Developer, an expert in identifying and fixing code issues. Do not consider the programming language; just analyze the code for any potential issues. Only acknowledge lines with errors.
 
                     ### Task:
                     Analyze the provided code for:
@@ -185,18 +190,18 @@ function createPrompt(action, code, targetLang) {
                     - Suggested fix  
 
                     ### Additional Instructions:
-                    - Explain issues in an easy-to-understand way.
-                    - If no errors are found, simply respond with:  
+                    - Explain issues clearly.
+                    - If no errors are found, respond with:
                     'Given Code is Correct, Keep Going!!!!'
 
                     ### Input Code:
-                    \n\n${code}\n\n
+                    ${code}
 
-                    ### Analysis:
-                    `
+                    ### Analysis:`
     };
     return prompts[action];
 }
+
 
 function formatOutput(action, result) {
     if (action === 'highlight') {
