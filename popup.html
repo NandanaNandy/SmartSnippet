@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Explainer Settings</title>
+  <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>API Settings</h1>
+    <form id="optionsForm">
+      <label for="apiKey">OpenAI API Key:</label>
+      <input type="password" id="apiKey" placeholder="Enter your API key" aria-label="API Key">
+      <button type="button" id="saveButton">Save Key</button>
+    </form>
+    <p id="message" role="alert"></p>
+    <footer>Your key is stored locally in browser storage</footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
