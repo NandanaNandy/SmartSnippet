@@ -30,3 +30,4 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => messageElement.textContent = "", 3000);
     }
 });
+
